@@ -15,7 +15,7 @@
   - volume_value: 거래량(거래주식수)
   
   2. sorting_hm.py 파일을 통해 데이터 가공
-  (한가지 종목을 임의로 선정하여 가공하도록 구현)
+  (한가지 종목을 임의로 선정하여 가공하도록 구현, 가공 후 'stock_history_added.csv'파일로 저장)
   - cv_diff_value: 종가 일간 변화량
   - cv_diff_rate: 종가 일간 변화율
   - cv_maN_value: 종가의 N일 이동평균, (예: N=5)단, 5일이 안되는 기간은 제외
