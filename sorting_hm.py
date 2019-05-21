@@ -37,15 +37,15 @@ def prepare_data(selected_data):
         if index == 0:
             cv_diff_rate.append(0)
         else:
-            if close_value[index] == close_value[index-1] or close_value[index-1]==0:
+            if close_value[index] == close_value[index-1]:
                 diff_rate = 0
             else:
-                if close_value[index]-close_value[index-1] > 0:    #증가율
-                    diff_rate = ((close_value[index]-close_value[index-1])/close_value[index-1])*100
-                elif close_value[index]-close_value[index-1] < 0:  #감소율
-                    diff_rate = ((close_value[index-1] - close_value[index])/close_value[index-1])*100
+                if close_value[index] > close_value[index-1]:    #증가율
+                    diff_rate = (close_value[index]-close_value[index-1])/close_value[index-1]*100
+                elif close_value[index] < close_value[index-1]:  #감소율
+                    diff_rate = -(close_value[index-1] - close_value[index])/close_value[index-1]*100
             #print(index, diff_rate)
-            #소수점셋째자리까지
+            #소수점둘째자리까지
             cv_diff_rate.append(round(diff_rate, 2))
     selected_data["cv_diff_rate"] = cv_diff_rate
     result_data = selected_data
@@ -53,7 +53,7 @@ def prepare_data(selected_data):
 
 # cv_maN_value: 종가의 N일 이동평균, (예: N=5)단, 5일이 안되는 기간은 제외 (예:  10(금),13(월), 14(화),15(수),16(목) 종가의 평균은 16일의 cv_ma5_value)
 def cv_moveAverage_value(N_days, data):
-    moveAverage_value = data['cv_diff_value'].rolling(window=N_days).mean()
+    moveAverage_value = data['close_value'].rolling(window=N_days).mean()
     data["cv_maN_value"] = moveAverage_value
     result_data = data.fillna(0)
     return result_data
@@ -69,12 +69,12 @@ def cv_moveAverage_rate(N_day, data):
             if cv_diff_rate[index] == cv_diff_rate[index - 1] or cv_diff_rate[index-1] == 0:
                 average_rate = 0
             else:
-                if cv_diff_rate[index] - cv_diff_rate[index - 1] > 0:
+                if cv_diff_rate[index] > cv_diff_rate[index - 1]:
                     average_rate = ((cv_diff_rate[index] - cv_diff_rate[index - 1])/cv_diff_rate[index-1]) * 100
-                elif cv_diff_rate[index] - cv_diff_rate[index - 1] < 0:
-                    average_rate = ((cv_diff_rate[index - 1] - cv_diff_rate[index])/cv_diff_rate[index-1]) * 100
+                elif cv_diff_rate[index] < cv_diff_rate[index - 1]:
+                    average_rate = (cv_diff_rate[index] - cv_diff_rate[index - 1])/abs(cv_diff_rate[index-1]) * 100
             # print(index, diff_rate)
-            # 소수점셋째자리까지
+            # 소수점둘째자리까지
             moveAverage_rate.append(round(average_rate, 2))
     data["cv_maN_rate"] = moveAverage_rate
     result_data = data
@@ -87,22 +87,23 @@ def cv_moveAverage_rate(N_day, data):
     (c) 그렇지 않은 날의 (N-1)번째 날 값은 0
     (예: ud_5d) 13(월), 14(화),15(수),16(목), 17(금) 종가의 전일대비상승하면, 16(목)의 값은 1, (주의) 13일은 10일 종가보다 상승
 '''
+#수정필요
 def set_udNd(N_day, data):
     diff_value = data['cv_diff_value']
     udNd = []
     for index in diff_value.index.values:
-        if index > 0 and index <= N_day-2:
+        if index > 0 and index < N_day-1:
             udNd.insert(index-1, 0)
-        elif index > N_day-2:
-            five_values = diff_value[index-N_day:index]
+        elif index >= N_day-1:
+            #5개의 데이터씩 선택 후 복사 복사한 데이터를 검사 후 리스트화
+            five_values = diff_value[index-N_day:index].copy()
             five_values[five_values > 0] = 1
-            five_values[five_values < 0] = 0
-            five_values[five_values == 0] = 2
+            five_values[five_values < 0] = 2
+            five_values[five_values == 0] = 3
             list = five_values.values.T.tolist()
-            #print(list)
             if list.count(1) == 5:
                 udNd.insert(index-1, 1)
-            elif list.count(0) == 5:
+            elif list.count(2) == 5:
                 udNd.insert(index-1, -1)
             else:
                 udNd.insert(index-1, 0)
@@ -117,16 +118,16 @@ def cvNd_diff_rate(N_days, data):
     close_value = data['close_value']
     cvNd_diff_rate = []
     for index in close_value.index.values:
-        if index > 0 and index <= N_days-2:
+        if index > 0 and index < N_days-1:
             cvNd_diff_rate.insert(index-1, 0)
-        elif index > N_days-2:
+        elif index >= N_days-1:
             if close_value[index] == close_value[index - N_days+1] or close_value[index - N_days+1] == 0:
                 cvNd_rate = 0
             else:
-                if close_value[index] - close_value[index - N_days+1] > 0:
+                if close_value[index] > close_value[index - N_days+1]:
                     cvNd_rate = ((close_value[index] - close_value[index - N_days+1])/close_value[index - N_days+1]) * 100
-                elif close_value[index] - close_value[index - 1] < 0:
-                    cvNd_rate = ((close_value[index - N_days+1] - close_value[index])/close_value[index - N_days+1]) * 100
+                elif close_value[index] < close_value[index - N_days+1]:
+                    cvNd_rate = -((close_value[index - N_days+1] - close_value[index])/close_value[index - N_days+1]) * 100
             # print(index, diff_rate)
             # 소수점셋째자리까지
             cvNd_diff_rate.insert(index-1, round(cvNd_rate, 2))
@@ -141,6 +142,7 @@ if __name__ == '__main__':
     #print(selected_data)
     #데이터 준비, 변수추가
     prepared_data = prepare_data(selected_data)                 #종가 일간 변화량, 변화율 추가
+    #print(prepared_data)
     prepared_data = cv_moveAverage_value(5, prepared_data)      #N_day 평균 병화량
     prepared_data = cv_moveAverage_rate(5, prepared_data)
     prepared_data = set_udNd(5, prepared_data)
@@ -148,5 +150,5 @@ if __name__ == '__main__':
     #날짜 내림차순으로 재 정렬
     prepared_data = prepared_data.sort_values(["basic_date"], ascending=[False])
     result_data = prepared_data.reset_index(drop=True)
-    print(result_data)
-    result_data.to_csv("stock_history_added.csv", mode='w')
+    #print(result_data)
+    result_data.to_csv("stock_history_added.csv", mode='w', encoding='cp949')
