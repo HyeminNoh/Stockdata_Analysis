@@ -45,9 +45,10 @@ def prepare_data(selected_data):
                     diff_rate = (close_value[index]-close_value[index-1])/close_value[index-1]*100
                 elif close_value[index] < close_value[index-1]:  #감소율
                     diff_rate = -(close_value[index-1] - close_value[index])/close_value[index-1]*100
+
             #print(index, diff_rate)
             #소수점둘째자리까지
-            cv_diff_rate.append(round(diff_rate, 2))
+            cv_diff_rate.append(round(diff_rate,2))
     selected_data["cv_diff_rate"] = cv_diff_rate
     result_data = selected_data
     return result_data
@@ -93,18 +94,20 @@ def set_udNd(N_day, data):
     diff_value = data['cv_diff_value']
     udNd = []
     for index in diff_value.index.values:
-        if index > 0 and index < N_day-1:
+        if index > 0 and index <= N_day-1:
             udNd.insert(index-1, 0)
-        elif index >= N_day-1:
+
+        elif index > N_day-1:
             #5개의 데이터씩 선택 후 복사 복사한 데이터를 검사 후 리스트화
-            five_values = diff_value[index-N_day:index].copy()
+            five_values = diff_value[index-(N_day-1):index+1].copy()
             five_values[five_values > 0] = 1
             five_values[five_values < 0] = 2
             five_values[five_values == 0] = 3
             list = five_values.values.T.tolist()
-            if list.count(1) == 5:
+
+            if list.count(1) == N_day:
                 udNd.insert(index-1, 1)
-            elif list.count(2) == 5:
+            elif list.count(2) == N_day:
                 udNd.insert(index-1, -1)
             else:
                 udNd.insert(index-1, 0)
@@ -137,19 +140,36 @@ def cvNd_diff_rate(N_days, data):
     result_data = data
     return result_data
 
+
 if __name__ == '__main__':
-    #종목선택 데이터 자르기
+    # 종목선택 데이터 자르기
     selected_data = select_stock()
-    #print(selected_data)
-    #데이터 준비, 변수추가
-    prepared_data = prepare_data(selected_data)                 #종가 일간 변화량, 변화율 추가
-    #print(prepared_data)
-    prepared_data = cv_moveAverage_value(5, prepared_data)      #N_day 평균 병화량
-    prepared_data = cv_moveAverage_rate(5, prepared_data)
-    prepared_data = set_udNd(5, prepared_data)
-    prepared_data = cvNd_diff_rate(5, prepared_data)
-    #날짜 내림차순으로 재 정렬
+    udnd_plus_count = 0
+    udnd_minus_count = 0
+    # print(selected_data)
+    # 데이터 준비, 변수추가
+    prepared_data = prepare_data(selected_data)  # 종가 일간 변화량, 변화율 추가
+    # print(prepared_data)
+    for i in range(3, 6):
+        prepared_data = cv_moveAverage_value(i, prepared_data)  # N_day 평균 병화량
+        prepared_data = cv_moveAverage_rate(i, prepared_data)
+        prepared_data = set_udNd(i, prepared_data)
+        prepared_data = cvNd_diff_rate(i, prepared_data)
+        udnd = prepared_data['ud_Nd']
+
+        for index in udnd.index.values:
+            if udnd[index] == 1:
+                udnd_plus_count += 1
+            elif udnd[index] == -1:
+                udnd_minus_count += 1
+        print("N의 크기 : " +str(i))
+        print("udNd가 +1 의 개수 : " +str(udnd_plus_count))
+        print("udNd가 -1 의 개수 : " +str(udnd_minus_count))
+        udnd_plus_count = 0
+        udnd_minus_count = 0
+    # 날짜 내림차순으로 재 정렬
+
     prepared_data = prepared_data.sort_values(["basic_date"], ascending=[False])
     result_data = prepared_data.reset_index(drop=True)
-    #print(result_data)
-    result_data.to_csv("stock_history_added.csv", mode='w', encoding='cp949')
+
+    prepared_data.to_csv("stock_history_added.csv", mode='w', encoding='cp949')
