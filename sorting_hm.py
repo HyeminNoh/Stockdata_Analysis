@@ -15,6 +15,7 @@ def select_stock():
     result = result.reset_index(drop=True)
     return result
 
+#종가 일간 변화량 과 종가 일간 변화율
 def prepare_data(selected_data):
     #날짜 오름차순으로 정렬
     selected_data = selected_data.sort_values(["basic_date"], ascending=[True])
