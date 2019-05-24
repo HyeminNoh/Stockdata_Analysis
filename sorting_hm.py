@@ -1,5 +1,10 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+from collections import Counter
+from linear_algebra import distance
+from stats import mean
+import math, random
 
 def select_stock():
     data = pd.read_csv("stock_history.csv", sep=",", encoding='euc-kr')
@@ -8,10 +13,10 @@ def select_stock():
     stockname = stockname.drop_duplicates()
     stockname = stockname.reset_index(drop=True)
     #임의로 5개만 리스트 출력해 냄
-    stocklist=[stockname[0], stockname[1], stockname[2], stockname[3], stockname[4], stockname[5]]
-    print("주식 종목 리스트:"+str(stocklist))
-    input_stockname = input('종목을 입력: ')
-    result = (data[data['stockname'].isin([input_stockname])])  #선택한 주식 종목명을 가진 행만 출력
+    #stocklist=[stockname[0], stockname[1], stockname[2], stockname[3], stockname[4], stockname[5]]
+    #print("주식 종목 리스트:"+str(stocklist))
+    #input_stockname = input('종목을 입력: ')
+    result = (data[data['stockname'].isin(["고려아연"])])  #선택한 주식 종목명을 가진 행만 출력
     result = result.reset_index(drop=True)
     return result
 
@@ -111,7 +116,7 @@ def set_udNd(N_day, data):
                 udNd.insert(index-1, -1)
             else:
                 udNd.insert(index-1, 0)
-    udNd.append('-')
+    udNd.append(0)
     data["ud_Nd"] = udNd
     result_data = data
     return result_data
@@ -135,41 +140,149 @@ def cvNd_diff_rate(N_days, data):
             # print(index, diff_rate)
             # 소수점셋째자리까지
             cvNd_diff_rate.insert(index-1, round(cvNd_rate, 2))
-    cvNd_diff_rate.append('-')
+    cvNd_diff_rate.append(0)
     data["cvNd_diff_rate"] = cvNd_diff_rate
     result_data = data
     return result_data
 
 
+def plot_state_borders(plt, color='0.8'):
+    pass
+
+def plot_udNd(data):
+
+    # key is language, value is pair (longitudes, latitudes)
+    plots = {"1": ([], []), "-1": ([], []), "0": ([], [])}
+
+    # we want each language to have a different marker and color
+    markers = {"1": "o", "-1": "s", "0": "^"}
+    colors = {"1": "r", "-1": "b", "0": "g"}
+
+    cv_diff_rate = data['cv_diff_rate']
+    cv_maN_rate = data['cv_maN_rate']
+    udNd = data['ud_Nd']
+    udnddata = []
+    for index in cv_diff_rate.index.values:
+        udnddata.append((cv_diff_rate[index] , cv_maN_rate[index], str(udNd[index])))
+
+    udnddata = [([diffrate, maNrate], UDND) for diffrate, maNrate, UDND in udnddata]
+
+    for (diffrate, maNrate), UDND in udnddata:
+        plots[UDND][0].append(diffrate)
+        plots[UDND][1].append(maNrate)
+
+    # create a scatter series for each language
+    for language, (x, y) in plots.items():
+        plt.scatter(x, y, color=colors[language], marker=markers[language],
+                    label=language, zorder=10)
+
+    plot_state_borders(plt)  # assume we have a function that does this
+
+    plt.legend(loc=0)  # let matplotlib choose the location
+    plt.title("ud_Nd")
+    plt.axis([-12, 8, -5, 4])  # set the axes
+
+    # X축이 cv_diff_rate
+    # Y축이 cv_maN_rate
+    plt.show()
+
+    return udnddata
+
+
+def knn_classify(k, labeled_points, new_point):
+    """매개변수설명 k : 어느정도 가까운 것들을 찾는가
+                   labeled_points : 분류에 사용 될 데이터목록들
+                    new_point : 분류하고 싶은 데이터
+ 1. 분류에 사용될 데이터들을 분류 될 데이터와 거리 순으로 정렬한다.
+2. 정렬된 데이터 중에서 k 거리 이내에 있는 데이터 목록만 따로 majority_vote에
+ 넘겨서 k 거리이내의 데이터들 중에 가장 많이 포함되 있는 라벨(야구 혹은 축구?) 을 찾는다."""
+    """each labeled point should be a pair (point, label)"""
+
+    # order the labeled points from nearest to farthest
+    by_distance = sorted(labeled_points,
+                         key=lambda point_label: distance(point_label[0], new_point))
+
+    # find the labels for the k closest
+    k_nearest_labels = [label for _, label in by_distance[:k]]
+
+    # and let them vote
+    return majority_vote(k_nearest_labels)
+
+def majority_vote(labels):
+    """assumes that labels are ordered from nearest to farthest"""
+    vote_counts = Counter(labels)
+    winner, winner_count = vote_counts.most_common(1)[0]
+    num_winners = len([count
+                       for count in vote_counts.values()
+                       if count == winner_count])
+
+    if num_winners == 1:
+        return winner  # unique winner, so return it
+    else:
+        return majority_vote(labels[:-1])  # try again without the farthest
+
+def classify_and_plot_grid(k,data):
+    plots = {"1": ([], []), "-1": ([], []), "0": ([], [])}
+
+    # we want each language to have a different marker and color
+    markers = {"1": "o", "-1": "s", "0": "^"}
+    colors = {"1": "r", "-1": "b", "0": "g"}
+
+    for longitude in np.arange(-12, 8,0.25):
+        for latitude in np.arange(-5, 4,0.25):
+            predicted_language = knn_classify(k, data, [longitude, latitude])
+            plots[predicted_language][0].append(longitude)
+            plots[predicted_language][1].append(latitude)
+
+    # create a scatter series for each language
+    for language, (x, y) in plots.items():
+        plt.scatter(x, y, color=colors[language], marker=markers[language],
+                    label=language, zorder=0)
+
+    plot_state_borders(plt, color='black')  # assume we have a function that does this
+
+    plt.legend(loc=0)  # let matplotlib choose the location
+    plt.axis([-12, 8, -5, 4])  # set the axes
+    plt.title(str(k) + "-Nearest Neighbor Programming Languages")
+    plt.show()
+
+
 if __name__ == '__main__':
     # 종목선택 데이터 자르기
     selected_data = select_stock()
-    udnd_plus_count = 0
-    udnd_minus_count = 0
     # print(selected_data)
     # 데이터 준비, 변수추가
     prepared_data = prepare_data(selected_data)  # 종가 일간 변화량, 변화율 추가
     # print(prepared_data)
-    for i in range(3, 6):
-        prepared_data = cv_moveAverage_value(i, prepared_data)  # N_day 평균 병화량
-        prepared_data = cv_moveAverage_rate(i, prepared_data)
-        prepared_data = set_udNd(i, prepared_data)
-        prepared_data = cvNd_diff_rate(i, prepared_data)
-        udnd = prepared_data['ud_Nd']
+    prepared_data = cv_moveAverage_value(3, prepared_data)  # N_day 평균 병화량
+    prepared_data = cv_moveAverage_rate(3, prepared_data)
+    prepared_data = set_udNd(3, prepared_data)
+    prepared_data = cvNd_diff_rate(3, prepared_data)
 
-        for index in udnd.index.values:
-            if udnd[index] == 1:
-                udnd_plus_count += 1
-            elif udnd[index] == -1:
-                udnd_minus_count += 1
-        print("N의 크기 : " +str(i))
-        print("udNd가 +1 의 개수 : " +str(udnd_plus_count))
-        print("udNd가 -1 의 개수 : " +str(udnd_minus_count))
-        udnd_plus_count = 0
-        udnd_minus_count = 0
     # 날짜 내림차순으로 재 정렬
 
     prepared_data = prepared_data.sort_values(["basic_date"], ascending=[False])
     result_data = prepared_data.reset_index(drop=True)
 
-    prepared_data.to_csv("stock_history_added.csv", mode='w', encoding='cp949')
+    result_data.to_csv("stock_history_added.csv", mode='w', encoding='cp949')
+
+    data = plot_udNd(result_data)
+
+    for k in [1, 3, 5]:
+        num_correct = 0
+
+        for location, actual_language in data:
+
+            other_cities = [other_city
+                            for other_city in data
+                            if other_city != (location, actual_language)]
+            predicted_language = knn_classify(k, other_cities, location)
+
+            if predicted_language == actual_language:
+                num_correct += 1
+
+        print(k, "neighbor[s]:", num_correct, "correct out of", len(data), num_correct/len(data)*100,"%")
+
+  # 3. classfy and plot grid with k = 1, 3, 5
+    # classify_and_plot_grid(3)
+    classify_and_plot_grid(3, data)
