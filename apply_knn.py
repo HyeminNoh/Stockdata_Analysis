@@ -146,15 +146,18 @@ if __name__ == '__main__':
 
     for k in range(1, 31, 2):
         num_correct = 0
-
+        k_value_ = []
+        column_name = "k_value_" + str(k)
         for rate, actual_udNd in testdata:
             # other_cities는 학습, location은 테스트
             predicted_udNd = knn_classify(k, trainingdata, rate)
+            k_value_.append(predicted_udNd)
             if predicted_udNd == actual_udNd:
                 num_correct += 1
-
+        test_data[column_name] = k_value_
         print(k, "neighbor[s]:", num_correct, "correct out of", len(data), num_correct / len(data) * 100, "%")
 
+    test_data.to_csv("stock_history_K.csv", mode='w', encoding='cp949')
     # 3. classfy and plot grid with k = 1, 3, 5
     # classify_and_plot_grid(3)
     # 첫번째 인자는 k 값

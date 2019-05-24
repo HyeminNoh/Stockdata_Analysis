@@ -158,7 +158,6 @@ if __name__ == '__main__':
     prepared_data = cvNd_diff_rate(3, prepared_data)
 
     # 날짜 내림차순으로 재 정렬
-
     prepared_data = prepared_data.sort_values(["basic_date"], ascending=[False])
     result_data = prepared_data.reset_index(drop=True)
 
