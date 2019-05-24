@@ -204,13 +204,14 @@ def knn_classify(k, labeled_points, new_point):
 
     # find the labels for the k closest
     k_nearest_labels = [label for _, label in by_distance[:k]]
-
     # and let them vote
     return majority_vote(k_nearest_labels)
 
 def majority_vote(labels):
     """assumes that labels are ordered from nearest to farthest"""
+    # Counter는 사전(dict) 클래스의 하위 클래스로 리스트나 튜플에서 각 데이터가 등장한 횟수를 사전 형식으로 돌려준다
     vote_counts = Counter(labels)
+    #Counter 클래스의 most_common(n) 메쏘드는 등장한 횟수를 내림차순으로 정리 n은 상위 n개
     winner, winner_count = vote_counts.most_common(1)[0]
     num_winners = len([count
                        for count in vote_counts.values()
@@ -248,6 +249,31 @@ def classify_and_plot_grid(k,data):
     plt.show()
 
 
+def classify_data(data):
+    total_index = len(data.index)
+    # 30% 테스트 데이터, 70% 학습데이터
+    #올림 적용 정수형태로 개수 반환
+    test_num = math.ceil(total_index*0.3)
+
+    test_data = data.iloc[:test_num, 1:]
+    training_data = data.iloc[test_num:, 1:]
+    test_data = test_data.reset_index(drop=True)
+    training_data = training_data.reset_index(drop=True)
+    return (test_data, training_data)
+
+def data_cook(data):
+    cv_diff_rate = data['cv_diff_rate']
+    cv_maN_rate = data['cv_maN_rate']
+    udNd = data['ud_Nd']
+    data_cook = []
+    for index in cv_diff_rate.index.values:
+        data_cook.append((cv_diff_rate[index] , cv_maN_rate[index], str(udNd[index])))
+
+    data_cook = [([diffrate, maNrate], UDND) for diffrate, maNrate, UDND in data_cook]
+
+
+    return data_cook
+
 if __name__ == '__main__':
     # 종목선택 데이터 자르기
     selected_data = select_stock()
@@ -267,26 +293,35 @@ if __name__ == '__main__':
 
     result_data.to_csv("stock_history_added.csv", mode='w', encoding='cp949')
 
+    input_data = pd.read_csv("stock_history_added.csv", sep=",", encoding='cp949')
+    test_data = classify_data(input_data)[0]
+    training_data = classify_data(input_data)[1]
+
     data = plot_udNd(result_data)
+    testdata = data_cook(test_data)
+    trainingdata = data_cook(training_data)
 
-    for k in [1]:
+
+    for k in range(1,31,2):
         num_correct = 0
-        for location, actual_language in data:
 
+        for location, actual_language in testdata:
+            """
             other_cities = []
             for other_city in data:
 
                 if other_city != (location, actual_language):
                     other_cities.append(other_city)
 
-
-            #other_cities는 학습, location은 테스트
-            predicted_language = knn_classify(k, other_cities, location)
+            """
+        #other_cities는 학습, location은 테스트
+            predicted_language = knn_classify(k, trainingdata, location)
             if predicted_language == actual_language:
-                num_correct += 1
+               num_correct += 1
+
         print(k, "neighbor[s]:", num_correct, "correct out of", len(data), num_correct/len(data)*100,"%")
 
   # 3. classfy and plot grid with k = 1, 3, 5
     # classify_and_plot_grid(3)
     # 첫번째 인자는 k 값
-    classify_and_plot_grid(3, data)
+    #classify_and_plot_grid(3, data)
