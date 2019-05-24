@@ -234,6 +234,7 @@ def classify_and_plot_grid(k,data):
             plots[predicted_language][0].append(longitude)
             plots[predicted_language][1].append(latitude)
 
+
     # create a scatter series for each language
     for language, (x, y) in plots.items():
         plt.scatter(x, y, color=colors[language], marker=markers[language],
@@ -268,21 +269,24 @@ if __name__ == '__main__':
 
     data = plot_udNd(result_data)
 
-    for k in [1, 3, 5]:
+    for k in [1]:
         num_correct = 0
-
         for location, actual_language in data:
 
-            other_cities = [other_city
-                            for other_city in data
-                            if other_city != (location, actual_language)]
-            predicted_language = knn_classify(k, other_cities, location)
+            other_cities = []
+            for other_city in data:
 
+                if other_city != (location, actual_language):
+                    other_cities.append(other_city)
+
+
+            #other_cities는 학습, location은 테스트
+            predicted_language = knn_classify(k, other_cities, location)
             if predicted_language == actual_language:
                 num_correct += 1
-
         print(k, "neighbor[s]:", num_correct, "correct out of", len(data), num_correct/len(data)*100,"%")
 
   # 3. classfy and plot grid with k = 1, 3, 5
     # classify_and_plot_grid(3)
+    # 첫번째 인자는 k 값
     classify_and_plot_grid(3, data)
