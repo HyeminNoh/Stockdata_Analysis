@@ -264,10 +264,12 @@ def classify_data(data):
 def data_cook(data):
     cv_diff_rate = data['cv_diff_rate']
     cv_maN_rate = data['cv_maN_rate']
+    #cvNd_diff_rate = data['cvNd_diff_rate']
+
     udNd = data['ud_Nd']
     data_cook = []
-    for index in cv_diff_rate.index.values:
-        data_cook.append((cv_diff_rate[index] , cv_maN_rate[index], str(udNd[index])))
+    for index in cv_maN_rate.index.values:
+        data_cook.append((cv_diff_rate[index], cv_maN_rate[index] , str(udNd[index])))
 
     data_cook = [([diffrate, maNrate], UDND) for diffrate, maNrate, UDND in data_cook]
 
@@ -302,10 +304,10 @@ if __name__ == '__main__':
     trainingdata = data_cook(training_data)
 
 
-    for k in range(1,31,2):
+    for k in range(1,15,2):
         num_correct = 0
 
-        for location, actual_language in testdata:
+        for rate, actual_udNd in testdata:
             """
             other_cities = []
             for other_city in data:
@@ -315,13 +317,13 @@ if __name__ == '__main__':
 
             """
         #other_cities는 학습, location은 테스트
-            predicted_language = knn_classify(k, trainingdata, location)
-            if predicted_language == actual_language:
+            predicted_language = knn_classify(k, trainingdata, rate)
+            if predicted_language == actual_udNd:
                num_correct += 1
 
-        print(k, "neighbor[s]:", num_correct, "correct out of", len(data), num_correct/len(data)*100,"%")
+        print(k, "neighbor[s]:", num_correct, "correct out of", len(testdata), num_correct/len(testdata)*100,"%")
 
   # 3. classfy and plot grid with k = 1, 3, 5
     # classify_and_plot_grid(3)
     # 첫번째 인자는 k 값
-    #classify_and_plot_grid(3, data)
+    classify_and_plot_grid(3, trainingdata)
