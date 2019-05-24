@@ -1,6 +1,15 @@
 import pandas as pd
 import numpy as np
 
+def print_stock_category():
+    data = pd.read_csv("stock_history.csv", sep=",", encoding='euc-kr')
+    # 종목 이름 전체 종목 확인 -> 중복된것제거
+    stockname = data["stockname"]
+    stockname = stockname.drop_duplicates()
+    stockname = stockname.reset_index(drop=True)
+    stockname.to_csv("stock_category.csv", mode='w', encoding='cp949')
+    #print(stockname)
+
 def select_stock():
     data = pd.read_csv("stock_history.csv", sep=",", encoding='euc-kr')
     #종목 이름 전체 종목 확인 -> 중복된것제거
@@ -8,9 +17,9 @@ def select_stock():
     stockname = stockname.drop_duplicates()
     stockname = stockname.reset_index(drop=True)
     #임의로 5개만 리스트 출력해 냄
-    stocklist=[stockname[0], stockname[1], stockname[2], stockname[3], stockname[4], stockname[5]]
-    print("주식 종목 리스트:"+str(stocklist))
-    input_stockname = input('종목을 입력: ')
+    #stocklist=[stockname[0], stockname[1], stockname[2], stockname[3], stockname[4], stockname[5]]
+    #print("주식 종목 리스트:"+str(stocklist))
+    input_stockname = input('종목이름 입력: ')
     result = (data[data['stockname'].isin([input_stockname])])  #선택한 주식 종목명을 가진 행만 출력
     result = result.reset_index(drop=True)
     return result
@@ -101,9 +110,9 @@ def set_udNd(N_day, data):
             five_values[five_values < 0] = 2
             five_values[five_values == 0] = 3
             list = five_values.values.T.tolist()
-            if list.count(1) == 5:
+            if list.count(1) == N_day:
                 udNd.insert(index-1, 1)
-            elif list.count(2) == 5:
+            elif list.count(2) == N_day:
                 udNd.insert(index-1, -1)
             else:
                 udNd.insert(index-1, 0)
@@ -137,16 +146,17 @@ def cvNd_diff_rate(N_days, data):
     return result_data
 
 if __name__ == '__main__':
+    #print_stock_category()
     #종목선택 데이터 자르기
     selected_data = select_stock()
     #print(selected_data)
     #데이터 준비, 변수추가
     prepared_data = prepare_data(selected_data)                 #종가 일간 변화량, 변화율 추가
     #print(prepared_data)
-    prepared_data = cv_moveAverage_value(5, prepared_data)      #N_day 평균 병화량
-    prepared_data = cv_moveAverage_rate(5, prepared_data)
-    prepared_data = set_udNd(5, prepared_data)
-    prepared_data = cvNd_diff_rate(5, prepared_data)
+    prepared_data = cv_moveAverage_value(3, prepared_data)      #N_day 평균 병화량
+    prepared_data = cv_moveAverage_rate(3, prepared_data)
+    prepared_data = set_udNd(3, prepared_data)
+    prepared_data = cvNd_diff_rate(3, prepared_data)
     #날짜 내림차순으로 재 정렬
     prepared_data = prepared_data.sort_values(["basic_date"], ascending=[False])
     result_data = prepared_data.reset_index(drop=True)
