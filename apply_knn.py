@@ -7,6 +7,7 @@ import math
 
 def classify_data(data):
     total_index = len(data.index)
+
     # 30% 테스트 데이터, 70% 학습데이터
     # 올림 적용 정수형태로 개수 반환
     test_num = math.ceil(total_index*0.3)
@@ -130,11 +131,10 @@ def data_cook(data, x_value, y_value):
 
     data_cook = [([x_value, y_value], UDND) for x_value, y_value, UDND in data_cook]
 
-
     return data_cook
 
-'''
-코드 작성 및 테스트 시 사용했던 메인
+
+# 코드 작성 및 테스트 시 사용했던 메인
 
 if __name__ == '__main__':
     input_data = pd.read_csv("stock_history_added.csv", sep=",", encoding='cp949')
@@ -164,4 +164,3 @@ if __name__ == '__main__':
     # classify_and_plot_grid(3)
     # 첫번째 인자는 k 값
     # classify_and_plot_grid(3, data)
-'''
