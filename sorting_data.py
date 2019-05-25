@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from collections import Counter
 from linear_algebra import distance
-from stats import mean
 import math, random
 
 def select_stock():
