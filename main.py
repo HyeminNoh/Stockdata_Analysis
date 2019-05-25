@@ -1,45 +1,96 @@
-import sorting_data
 import apply_knn as knn
+import sorting_data as prepareData
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
 
-if __name__ == '__main__':
+def total_prepared_data():
     # 종목선택 데이터 자르기
-    selected_data = sorting_data.select_stock()
+    selected_data = prepareData.select_stock()
     # print(selected_data)
     # 데이터 준비, 변수추가
-    prepared_data = sorting_data.prepare_data(selected_data)  # 종가 일간 변화량, 변화율 추가
+    prepared_data = prepareData.prepare_data(selected_data)  # 종가 일간 변화량, 변화율 추가
     # print(prepared_data)
-    prepared_data = sorting_data.cv_moveAverage_value(3, prepared_data)  # N_day 평균 병화량
-    prepared_data = sorting_data.cv_moveAverage_rate(3, prepared_data)
-    prepared_data = sorting_data.set_udNd(3, prepared_data)
-    prepared_data = sorting_data.cvNd_diff_rate(3, prepared_data)
+    prepared_data = prepareData.cv_moveAverage_value(3, prepared_data)  # N_day 평균 병화량
+    prepared_data = prepareData.cv_moveAverage_rate(3, prepared_data)
+    prepared_data = prepareData.set_udNd(3, prepared_data)
+    prepared_data = prepareData.cvNd_diff_rate(3, prepared_data)
 
     # 날짜 내림차순으로 재 정렬
     prepared_data = prepared_data.sort_values(["basic_date"], ascending=[False])
     result_data = prepared_data.reset_index(drop=True)
 
-    # stock_history_added파일 생성
     result_data.to_csv("stock_history_added.csv", mode='w', encoding='cp949')
+    return result_data
 
-    # input_data = pd.read_csv("stock_history_added.csv", sep=",", encoding='cp949')
-    test_data = knn.classify_data(result_data)[0]
-    training_data = knn.classify_data(result_data)[1]
+def k_change_plot(k, data):
+    test_data = knn.classify_data(data)[0]
+    training_data = knn.classify_data(data)[1]
 
-    data = knn.plot_udNd(result_data)
+    testdata = knn.data_cook(test_data, "cv_diff_rate", "cv_maN_rate")
+    trainingdata = knn.data_cook(training_data, "cv_diff_rate", "cv_maN_rate")
+    accuracy_plot = []
+    k_plot = []
+    for i in range(1, k+2, 2):
+        num_correct = 0
+
+        for rate, actual_udNd in testdata:
+            predicted_udNd = knn.knn_classify(i, trainingdata, rate)
+            if predicted_udNd == actual_udNd:
+                num_correct += 1
+
+        accuracy = num_correct / len(testdata) * 100
+
+        for index in test_data.index.values:
+            k_plot.append(i)
+            accuracy_plot.append(accuracy)
+
+        # print(i, "neighbor[s]:", num_correct, "correct out of", len(testdata), accuracy, "%")
+    max_accaracy = max(accuracy_plot)
+    count = 0
+    for index in accuracy_plot:
+        if max_accaracy == index:
+            break
+        else:
+            count = count+1
+    max_index = 1+count*2
+    plt.plot(k_plot, accuracy_plot, marker='o')
+    plt.xlabel('K')
+    plt.ylabel('Accuracy')
+    plt.xticks(np.arange(1, k+2, 2))
+    plt.show()
+    return max_index
+
+def make_result(k_num, input_data):
+    test_data = knn.classify_data(input_data)[0]
+    training_data = knn.classify_data(input_data)[1]
+
+    data = knn.plot_udNd(input_data)
     # data_cook 파라미터 값 ( data, x_value, y_value)
     testdata = knn.data_cook(test_data, "cv_diff_value", "cv_maN_value")
     trainingdata = knn.data_cook(training_data, "cv_diff_value", "cv_maN_value")
 
-    for k in range(1, 31, 2):
-        num_correct = 0
-        k_value_ = []
-        column_name = "k_value_" + str(k)
-        for rate, actual_udNd in testdata:
-            # other_cities는 학습, location은 테스트
-            predicted_udNd = knn.knn_classify(k, trainingdata, rate)
-            k_value_.append(predicted_udNd)
-            if predicted_udNd == actual_udNd:
-                num_correct += 1
-        test_data[column_name] = k_value_
-        print(k, "neighbor[s]:", num_correct, "correct out of", len(data), num_correct / len(data) * 100, "%")
+    num_correct = 0
+    k_value = []
+    for rate, actual_udNd in testdata:
+        predicted_udNd = knn.knn_classify(k_num, trainingdata, rate)
+        k_value.append(predicted_udNd)
+        if predicted_udNd == actual_udNd:
+            num_correct += 1
 
+    accuracy = num_correct / len(testdata) * 100
+    print("정확도: "+str(round(accuracy, 2))+"%")
+    test_data["K"] = k_num
+    test_data["k_udnd"] = k_value
     test_data.to_csv("stock_history_K.csv", mode='w', encoding='cp949')
+
+if __name__ == '__main__':
+    # 데이터 준비 1번 과정
+    prepared_data = total_prepared_data()
+
+    # K값에 따른 정확도 제시, 첫번째 파라미터 K값 범위 지정
+    # 정확도가 가장 높았던 k값을 반환
+    max_k = k_change_plot(21, prepared_data)
+
+    # 가장 정확도가 높은 K값에 따른 예측값이 포함된 데이터 파일 생성
+    make_result(max_k, prepared_data)
