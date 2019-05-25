@@ -94,7 +94,6 @@ def cv_moveAverage_rate(N_day, data):
     (c) 그렇지 않은 날의 (N-1)번째 날 값은 0
     (예: ud_5d) 13(월), 14(화),15(수),16(목), 17(금) 종가의 전일대비상승하면, 16(목)의 값은 1, (주의) 13일은 10일 종가보다 상승
 '''
-#수정필요
 def set_udNd(N_day, data):
     diff_value = data['cv_diff_value']
     udNd = []
@@ -276,7 +275,7 @@ def data_cook(data):
 
     return data_cook
 
-if __name__ == '__main__':
+def total_prepared_data():
     # 종목선택 데이터 자르기
     selected_data = select_stock()
     # print(selected_data)
@@ -294,35 +293,49 @@ if __name__ == '__main__':
 
     result_data.to_csv("stock_history_added.csv", mode='w', encoding='cp949')
 
+def k_change_plot(k):
     input_data = pd.read_csv("stock_history_added.csv", sep=",", encoding='cp949')
     test_data = classify_data(input_data)[0]
     training_data = classify_data(input_data)[1]
 
-    data = plot_udNd(result_data)
     testdata = data_cook(test_data)
     trainingdata = data_cook(training_data)
-
-
-    for k in range(1,15,2):
+    accuracy_plot = []
+    k_plot = []
+    for i in range(1, k+2, 2):
         num_correct = 0
+        accuracy_rate = 0
 
         for rate, actual_udNd in testdata:
-            """
-            other_cities = []
-            for other_city in data:
-
-                if other_city != (location, actual_language):
-                    other_cities.append(other_city)
-
-            """
-        #other_cities는 학습, location은 테스트
-            predicted_language = knn_classify(k, trainingdata, rate)
+            predicted_language = knn_classify(i, trainingdata, rate)
             if predicted_language == actual_udNd:
-               num_correct += 1
+                num_correct += 1
 
-        print(k, "neighbor[s]:", num_correct, "correct out of", len(testdata), num_correct/len(testdata)*100,"%")
+        accuracy = num_correct / len(testdata) * 100
+        # print(k, "neighbor[s]:", num_correct, "correct out of", len(testdata),accuracy_rate,"%")
 
-  # 3. classfy and plot grid with k = 1, 3, 5
-    # classify_and_plot_grid(3)
-    # 첫번째 인자는 k 값
-    classify_and_plot_grid(3, trainingdata)
+        accuracy_data = []
+        k_data = []
+        for index in test_data.index.values:
+            k_data.append(i)
+            accuracy_data.append(accuracy)
+            k_plot.append(i)
+            accuracy_plot.append(accuracy)
+
+        test_data["K"] = k_data
+        test_data["accuracy"] = accuracy_data
+
+    plt.plot(k_plot, accuracy_plot, marker='o')
+    plt.xlabel('K')
+    plt.ylabel('Accuracy')
+    plt.xticks([1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21,23], [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21,23])
+    plt.show()
+    test_data.to_csv("stock_history_K.csv", mode='w', encoding='cp949')
+
+if __name__ == '__main__':
+
+    total_prepared_data()
+#-------------------------------
+
+    k_change_plot(23)
+
