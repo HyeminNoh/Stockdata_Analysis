@@ -145,49 +145,6 @@ def cvNd_diff_rate(N_days, data):
     return result_data
 
 
-def plot_state_borders(plt, color='0.8'):
-    pass
-
-def plot_udNd(data):
-
-    # key is language, value is pair (longitudes, latitudes)
-    plots = {"1": ([], []), "-1": ([], []), "0": ([], [])}
-
-    # we want each language to have a different marker and color
-    markers = {"1": "o", "-1": "s", "0": "^"}
-    colors = {"1": "r", "-1": "b", "0": "g"}
-
-    cv_diff_rate = data['cv_diff_rate']
-    cv_maN_rate = data['cv_maN_rate']
-    udNd = data['ud_Nd']
-    udnddata = []
-    for index in cv_diff_rate.index.values:
-        udnddata.append((cv_diff_rate[index] , cv_maN_rate[index], str(udNd[index])))
-
-    udnddata = [([diffrate, maNrate], UDND) for diffrate, maNrate, UDND in udnddata]
-
-    for (diffrate, maNrate), UDND in udnddata:
-        plots[UDND][0].append(diffrate)
-        plots[UDND][1].append(maNrate)
-
-    # create a scatter series for each language
-    for language, (x, y) in plots.items():
-        plt.scatter(x, y, color=colors[language], marker=markers[language],
-                    label=language, zorder=10)
-
-    plot_state_borders(plt)  # assume we have a function that does this
-
-    plt.legend(loc=0)  # let matplotlib choose the location
-    plt.title("ud_Nd")
-    plt.axis([-12, 8, -5, 4])  # set the axes
-
-    # X축이 cv_diff_rate
-    # Y축이 cv_maN_rate
-    plt.show()
-
-    return udnddata
-
-
 def knn_classify(k, labeled_points, new_point):
     """매개변수설명 k : 어느정도 가까운 것들을 찾는가
                    labeled_points : 분류에 사용 될 데이터목록들
@@ -221,33 +178,6 @@ def majority_vote(labels):
     else:
         return majority_vote(labels[:-1])  # try again without the farthest
 
-def classify_and_plot_grid(k,data):
-    plots = {"1": ([], []), "-1": ([], []), "0": ([], [])}
-
-    # we want each language to have a different marker and color
-    markers = {"1": "o", "-1": "s", "0": "^"}
-    colors = {"1": "r", "-1": "b", "0": "g"}
-
-    for longitude in np.arange(-12, 8,0.25):
-        for latitude in np.arange(-5, 4,0.25):
-            predicted_language = knn_classify(k, data, [longitude, latitude])
-            plots[predicted_language][0].append(longitude)
-            plots[predicted_language][1].append(latitude)
-
-
-    # create a scatter series for each language
-    for language, (x, y) in plots.items():
-        plt.scatter(x, y, color=colors[language], marker=markers[language],
-                    label=language, zorder=0)
-
-    plot_state_borders(plt, color='black')  # assume we have a function that does this
-
-    plt.legend(loc=0)  # let matplotlib choose the location
-    plt.axis([-12, 8, -5, 4])  # set the axes
-    plt.title(str(k) + "-Nearest Neighbor Programming Languages")
-    plt.show()
-
-
 def classify_data(data):
     total_index = len(data.index)
     # 30% 테스트 데이터, 70% 학습데이터
@@ -263,12 +193,12 @@ def classify_data(data):
 def data_cook(data):
     cv_diff_rate = data['cv_diff_rate']
     cv_maN_rate = data['cv_maN_rate']
-    #cvNd_diff_rate = data['cvNd_diff_rate']
+    cvNd_diff_rate = data['cvNd_diff_rate']
 
     udNd = data['ud_Nd']
     data_cook = []
     for index in cv_maN_rate.index.values:
-        data_cook.append((cv_diff_rate[index], cv_maN_rate[index] , str(udNd[index])))
+        data_cook.append((cv_diff_rate[index] ,cv_maN_rate[index], str(udNd[index])))
 
     data_cook = [([diffrate, maNrate], UDND) for diffrate, maNrate, UDND in data_cook]
 
@@ -293,10 +223,12 @@ def total_prepared_data():
 
     result_data.to_csv("stock_history_added.csv", mode='w', encoding='cp949')
 
-def k_change_plot(k):
-    input_data = pd.read_csv("stock_history_added.csv", sep=",", encoding='cp949')
-    test_data = classify_data(input_data)[0]
-    training_data = classify_data(input_data)[1]
+    return result_data
+
+
+def k_change_plot(k, data):
+    test_data = classify_data(data)[0]
+    training_data = classify_data(data)[1]
 
     testdata = data_cook(test_data)
     trainingdata = data_cook(training_data)
@@ -304,7 +236,6 @@ def k_change_plot(k):
     k_plot = []
     for i in range(1, k+2, 2):
         num_correct = 0
-        accuracy_rate = 0
 
         for rate, actual_udNd in testdata:
             predicted_language = knn_classify(i, trainingdata, rate)
@@ -312,30 +243,55 @@ def k_change_plot(k):
                 num_correct += 1
 
         accuracy = num_correct / len(testdata) * 100
-        # print(k, "neighbor[s]:", num_correct, "correct out of", len(testdata),accuracy_rate,"%")
 
-        accuracy_data = []
-        k_data = []
         for index in test_data.index.values:
-            k_data.append(i)
-            accuracy_data.append(accuracy)
             k_plot.append(i)
             accuracy_plot.append(accuracy)
 
-        test_data["K"] = k_data
-        test_data["accuracy"] = accuracy_data
+        print(i, "neighbor[s]:", num_correct, "correct out of", len(testdata), accuracy, "%")
 
     plt.plot(k_plot, accuracy_plot, marker='o')
     plt.xlabel('K')
     plt.ylabel('Accuracy')
-    plt.xticks([1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21,23], [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21,23])
+    plt.xticks(np.arange(1,k+2,2))
     plt.show()
+
+def show_accuracy():
+    input_data = pd.read_csv("stock_history_added.csv", sep=",", encoding='cp949')
+    test_data = classify_data(input_data)[0]
+    training_data = classify_data(input_data)[1]
+
+    testdata = data_cook(test_data)
+    trainingdata = data_cook(training_data)
+
+    num_correct = 0
+
+    for rate, actual_udNd in testdata:
+        predicted_language = knn_classify(11, trainingdata, rate)
+        if predicted_language == actual_udNd:
+            num_correct += 1
+
+    accuracy = num_correct / len(testdata) * 100
+
+    accuracy_data = []
+    k_data = []
+    for index in test_data.index.values:
+        k_data.append(11)
+        accuracy_data.append(accuracy)
+
+    test_data["K"] = k_data
+    test_data["accuracy"] = accuracy_data
     test_data.to_csv("stock_history_K.csv", mode='w', encoding='cp949')
+
 
 if __name__ == '__main__':
 
+    #데이터 준비 1번 과정
     total_prepared_data()
-#-------------------------------
 
-    k_change_plot(23)
+    #K값에 따른 정확도 제시, 인자는 보고싶은 K값의 범위
+    k_change_plot(21, total_prepared_data())
 
+
+    #가장 정확도가 높은 K값에 따른 예측값이 포함된 데이터 파일 생성, 이 함수에선 K는 11로 지정되어있음
+    show_accuracy()
