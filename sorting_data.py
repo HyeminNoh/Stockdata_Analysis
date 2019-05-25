@@ -94,7 +94,6 @@ def cv_moveAverage_rate(N_day, data):
     (c) 그렇지 않은 날의 (N-1)번째 날 값은 0
     (예: ud_5d) 13(월), 14(화),15(수),16(목), 17(금) 종가의 전일대비상승하면, 16(목)의 값은 1, (주의) 13일은 10일 종가보다 상승
 '''
-#수정필요
 def set_udNd(N_day, data):
     diff_value = data['cv_diff_value']
     udNd = []
@@ -145,6 +144,9 @@ def cvNd_diff_rate(N_days, data):
     result_data = data
     return result_data
 
+'''
+코드 작성 및 테스트 시 사용했던 메인
+
 if __name__ == '__main__':
     # 종목선택 데이터 자르기
     selected_data = select_stock()
@@ -162,3 +164,4 @@ if __name__ == '__main__':
     result_data = prepared_data.reset_index(drop=True)
 
     result_data.to_csv("stock_history_added.csv", mode='w', encoding='cp949')
+'''

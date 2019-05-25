@@ -3,8 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from collections import Counter
 from linear_algebra import distance
-from stats import mean
-import math, random
+import math
 
 def classify_data(data):
     total_index = len(data.index)
@@ -67,7 +66,7 @@ def knn_classify(k, labeled_points, new_point):
         new_point : 분류하고 싶은 데이터
                     1. 분류에 사용될 데이터들을 분류 될 데이터와 거리 순으로 정렬한다.
                     2. 정렬된 데이터 중에서 k 거리 이내에 있는 데이터 목록만 따로 majority_vote에 넘겨서
-                    k 거리이내의 데이터들 중에 가장 많이 포함되 있는 라벨(야구 혹은 축구?) 을 찾는다.
+                    k 거리이내의 데이터들 중에 가장 많이 포함되 있는 라벨을 찾는다.
     """
     # each labeled point should be a pair (point, label)
 
@@ -98,7 +97,7 @@ def majority_vote(labels):
 def classify_and_plot_grid(k,data):
     plots = {"1": ([], []), "-1": ([], []), "0": ([], [])}
 
-    # we want each language to have a different marker and color
+    # we want each values to have a different marker and color
     markers = {"1": "o", "-1": "s", "0": "^"}
     colors = {"1": "r", "-1": "b", "0": "g"}
 
@@ -109,7 +108,7 @@ def classify_and_plot_grid(k,data):
             plots[predicted_language][1].append(latitude)
 
 
-    # create a scatter series for each language
+    # create a scatter series for each values
     for language, (x, y) in plots.items():
         plt.scatter(x, y, color=colors[language], marker=markers[language],
                     label=language, zorder=0)
@@ -133,6 +132,9 @@ def data_cook(data, x_value, y_value):
 
 
     return data_cook
+
+'''
+코드 작성 및 테스트 시 사용했던 메인
 
 if __name__ == '__main__':
     input_data = pd.read_csv("stock_history_added.csv", sep=",", encoding='cp949')
@@ -162,3 +164,4 @@ if __name__ == '__main__':
     # classify_and_plot_grid(3)
     # 첫번째 인자는 k 값
     # classify_and_plot_grid(3, data)
+'''
