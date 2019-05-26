@@ -21,7 +21,42 @@ def classify_data(data):
 def plot_state_borders(plt, color='0.8'):
     pass
 
-def plot_udNd(data):
+def predict_plot_udNd(predict_data):
+    plots = {"1": ([], []), "-1": ([], []), "0": ([], [])}
+
+    # we want each language to have a different marker and color
+    markers = {"1": "o", "-1": "s", "0": "^"}
+    colors = {"1": "r", "-1": "b", "0": "g"}
+
+    cv_diff_rate = predict_data['cv_diff_rate']
+    cv_maN_rate = predict_data['cv_maN_rate']
+    predict_udNd = predict_data['k_udnd']
+    predict_udndData = []
+    for index in cv_diff_rate.index.values:
+        predict_udndData.append((cv_diff_rate[index], cv_maN_rate[index], str(predict_udNd[index])))
+
+    predict_udndData = [([diffrate, maNrate], predict_udNd) for diffrate, maNrate, predict_udNd in predict_udndData]
+
+    for (diffrate, maNrate), predict_udNd in predict_udndData:
+        plots[predict_udNd][0].append(diffrate)
+        plots[predict_udNd][1].append(maNrate)
+
+    # create a scatter series for each udnd
+    for predict_udNd, (x, y) in plots.items():
+        plt.scatter(x, y, color=colors[predict_udNd], marker=markers[predict_udNd],
+                    label=predict_udNd, zorder=10)
+
+    plot_state_borders(plt)  # assume we have a function that does this
+
+    plt.legend(loc=0)  # let matplotlib choose the location
+    plt.title("ud_Nd")
+    plt.axis([-12, 8, -5, 4])  # set the axes
+
+    # X축이 cv_diff_rate
+    # Y축이 cv_maN_rate
+    plt.show()
+
+def plot_udNd(data, predict_data):
     # key is language, value is pair (longitudes, latitudes)
     plots = {"1": ([], []), "-1": ([], []), "0": ([], [])}
 
@@ -57,6 +92,7 @@ def plot_udNd(data):
     # Y축이 cv_maN_rate
     plt.show()
 
+    predict_plot_udNd(predict_data)
     return udndData
 
 
@@ -95,32 +131,6 @@ def majority_vote(labels):
     else:
         return majority_vote(labels[:-1])  # try again without the farthest
 
-def classify_and_plot_grid(k,data):
-    plots = {"1": ([], []), "-1": ([], []), "0": ([], [])}
-
-    # we want each values to have a different marker and color
-    markers = {"1": "o", "-1": "s", "0": "^"}
-    colors = {"1": "r", "-1": "b", "0": "g"}
-
-    for longitude in np.arange(-12, 8, 0.25):
-        for latitude in np.arange(-5, 4, 0.25):
-            predicted_language = knn_classify(k, data, [longitude, latitude])
-            plots[predicted_language][0].append(longitude)
-            plots[predicted_language][1].append(latitude)
-
-
-    # create a scatter series for each values
-    for language, (x, y) in plots.items():
-        plt.scatter(x, y, color=colors[language], marker=markers[language],
-                    label=language, zorder=0)
-
-    plot_state_borders(plt, color='black')  # assume we have a function that does this
-
-    plt.legend(loc=0)  # let matplotlib choose the location
-    plt.axis([-12, 8, -5, 4])  # set the axes
-    plt.title(str(k) + "-Nearest Neighbor Programming Languages")
-    plt.show()
-
 def data_cook(data, x_value, y_value):
     x_value = data[x_value]
     y_value = data[y_value]
@@ -135,32 +145,3 @@ def data_cook(data, x_value, y_value):
 
 
 # 코드 작성 및 테스트 시 사용했던 메인
-
-if __name__ == '__main__':
-    input_data = pd.read_csv("stock_history_added.csv", sep=",", encoding='cp949')
-    test_data = classify_data(input_data)[0]
-    training_data = classify_data(input_data)[1]
-
-    data = plot_udNd(input_data)
-    # data_cook 파라미터 값 ( data, x_value, y_value)
-    testdata = data_cook(test_data, "cv_diff_value", "cv_maN_value")
-    trainingdata = data_cook(training_data, "cv_diff_value", "cv_maN_value")
-
-    for k in range(1, 31, 2):
-        num_correct = 0
-        k_value_ = []
-        column_name = "k_value_" + str(k)
-        for rate, actual_udNd in testdata:
-            # other_cities는 학습, location은 테스트
-            predicted_udNd = knn_classify(k, trainingdata, rate)
-            k_value_.append(predicted_udNd)
-            if predicted_udNd == actual_udNd:
-                num_correct += 1
-        test_data[column_name] = k_value_
-        print(k, "neighbor[s]:", num_correct, "correct out of", len(data), num_correct / len(data) * 100, "%")
-
-    test_data.to_csv("stock_history_K.csv", mode='w', encoding='cp949')
-    # 3. classfy and plot grid with k = 1, 3, 5
-    # classify_and_plot_grid(3)
-    # 첫번째 인자는 k 값
-    # classify_and_plot_grid(3, data)

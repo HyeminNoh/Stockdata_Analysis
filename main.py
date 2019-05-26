@@ -40,15 +40,15 @@ def k_change_plot(k, data):
                 num_correct += 1
 
         accuracy = num_correct / len(testdata) * 100
+        k_plot.append(i)
+        accuracy_plot.append(accuracy)
 
-        for index in test_data.index.values:
-            k_plot.append(i)
-            accuracy_plot.append(accuracy)
 
         # print(i, "neighbor[s]:", num_correct, "correct out of", len(testdata), accuracy, "%")
     max_accaracy = max(accuracy_plot)
     count = 0
     for index in accuracy_plot:
+
         if max_accaracy == index:
             break
         else:
@@ -65,10 +65,9 @@ def make_result(k_num, input_data):
     test_data = knn.classify_data(input_data)[0]
     training_data = knn.classify_data(input_data)[1]
 
-    data = knn.plot_udNd(input_data)
     # data_cook 파라미터 값 ( data, x_value, y_value)
-    testdata = knn.data_cook(test_data, "cv_diff_value", "cv_maN_value")
-    trainingdata = knn.data_cook(training_data, "cv_diff_value", "cv_maN_value")
+    testdata = knn.data_cook(test_data, "cv_diff_rate", "cv_maN_rate")
+    trainingdata = knn.data_cook(training_data, "cv_diff_rate", "cv_maN_rate")
 
     num_correct = 0
     k_value = []
@@ -79,10 +78,12 @@ def make_result(k_num, input_data):
             num_correct += 1
 
     accuracy = num_correct / len(testdata) * 100
-    print("정확도: "+str(round(accuracy, 2))+"%")
+    print("K값 : ",k_num,"정확도: "+str(round(accuracy, 2))+"%")
     test_data["K"] = k_num
     test_data["k_udnd"] = k_value
     test_data.to_csv("stock_history_K.csv", mode='w', encoding='cp949')
+
+    return test_data
 
 if __name__ == '__main__':
     # 데이터 준비 1번 과정
@@ -93,4 +94,9 @@ if __name__ == '__main__':
     max_k = k_change_plot(21, prepared_data)
 
     # 가장 정확도가 높은 K값에 따른 예측값이 포함된 데이터 파일 생성
-    make_result(max_k, prepared_data)
+    predict_data = make_result(max_k, prepared_data)
+
+    # test데이터의 기존 udNd 분포도, 예측 udNd 분포도
+    knn.plot_udNd(knn.classify_data(prepared_data)[0], predict_data)
+
+    knn.classify_and_plot_grid(max_k,prepared_data)
