@@ -18,9 +18,6 @@ def classify_data(data):
     training_data = training_data.reset_index(drop=True)
     return (test_data, training_data)
 
-def plot_state_borders(plt, color='0.8'):
-    pass
-
 def predict_plot_udNd(predict_data):
     plots = {"1": ([], []), "-1": ([], []), "0": ([], [])}
 
@@ -45,8 +42,6 @@ def predict_plot_udNd(predict_data):
     for predict_udNd, (x, y) in plots.items():
         plt.scatter(x, y, color=colors[predict_udNd], marker=markers[predict_udNd],
                     label=predict_udNd, zorder=10)
-
-    plot_state_borders(plt)  # assume we have a function that does this
 
     plt.legend(loc=0)  # let matplotlib choose the location
     plt.title("ud_Nd")
@@ -82,8 +77,6 @@ def plot_udNd(data, predict_data):
         plt.scatter(x, y, color=colors[udnd], marker=markers[udnd],
                     label=udnd, zorder=10)
 
-    plot_state_borders(plt)  # assume we have a function that does this
-
     plt.legend(loc=0)  # let matplotlib choose the location
     plt.title("ud_Nd")
     plt.axis([-12, 8, -5, 4])  # set the axes
@@ -96,7 +89,8 @@ def plot_udNd(data, predict_data):
     return udndData
 
 def knn_classify(k, labeled_points, new_point):
-    """매개변수설명
+    """
+    매개변수설명
         k : 어느정도 가까운 것들을 찾는가
         labeled_points : 분류에 사용 될 데이터목록들
         new_point : 분류하고 싶은 데이터
@@ -109,6 +103,7 @@ def knn_classify(k, labeled_points, new_point):
     # order the labeled points from nearest to farthest
     by_distance = sorted(labeled_points,
                          key=lambda point_label: distance(point_label[0], new_point))
+    print(by_distance)
 
     # find the labels for the k closest
     k_nearest_labels = [label for _, label in by_distance[:k]]
@@ -121,6 +116,7 @@ def majority_vote(labels):
     vote_counts = Counter(labels)
     #Counter 클래스의 most_common(n) 메쏘드는 등장한 횟수를 내림차순으로 정리 n은 상위 n개
     winner, winner_count = vote_counts.most_common(1)[0]
+
     num_winners = len([count
                        for count in vote_counts.values()
                        if count == winner_count])
