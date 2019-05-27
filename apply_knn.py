@@ -95,7 +95,6 @@ def plot_udNd(data, predict_data):
     predict_plot_udNd(predict_data)
     return udndData
 
-
 def knn_classify(k, labeled_points, new_point):
     """매개변수설명
         k : 어느정도 가까운 것들을 찾는가
@@ -142,6 +141,3 @@ def data_cook(data, x_value, y_value):
     data_cook = [([x_value, y_value], UDND) for x_value, y_value, UDND in data_cook]
 
     return data_cook
-
-
-# 코드 작성 및 테스트 시 사용했던 메인
