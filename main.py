@@ -1,7 +1,6 @@
 import apply_knn as knn
 import sorting_data as prepareData
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
 
 def total_prepared_data():
@@ -43,8 +42,6 @@ def k_change_plot(k, data):
         k_plot.append(i)
         accuracy_plot.append(accuracy)
 
-
-        # print(i, "neighbor[s]:", num_correct, "correct out of", len(testdata), accuracy, "%")
     max_accaracy = max(accuracy_plot)
     count = 0
     for index in accuracy_plot:
@@ -68,7 +65,6 @@ def make_result(k_num, input_data):
     # data_cook 파라미터 값 ( data, x_value, y_value)
     testdata = knn.data_cook(test_data, "cv_diff_rate", "cv_maN_rate")
     trainingdata = knn.data_cook(training_data, "cv_diff_rate", "cv_maN_rate")
-
     num_correct = 0
     k_value = []
     for rate, actual_udNd in testdata:
@@ -99,4 +95,3 @@ if __name__ == '__main__':
     # test데이터의 기존 udNd 분포도, 예측 udNd 분포도
     knn.plot_udNd(knn.classify_data(prepared_data)[0], predict_data)
 
-    knn.classify_and_plot_grid(max_k,prepared_data)

@@ -1,9 +1,4 @@
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from collections import Counter
-from linear_algebra import distance
-import math, random
 
 def select_stock():
     data = pd.read_csv("stock_history.csv", sep=",", encoding='euc-kr')
@@ -32,7 +27,6 @@ def prepare_data(selected_data):
             cv_diff_value.append(0)
         else:
             diff_value = close_value[index]-close_value[index-1]
-            #print(index, diff_value)
             cv_diff_value.append(diff_value)
     selected_data["cv_diff_value"] = cv_diff_value
 
@@ -142,25 +136,3 @@ def cvNd_diff_rate(N_days, data):
     data["cvNd_diff_rate"] = cvNd_diff_rate
     result_data = data
     return result_data
-
-'''
-코드 작성 및 테스트 시 사용했던 메인
-
-if __name__ == '__main__':
-    # 종목선택 데이터 자르기
-    selected_data = select_stock()
-    # print(selected_data)
-    # 데이터 준비, 변수추가
-    prepared_data = prepare_data(selected_data)  # 종가 일간 변화량, 변화율 추가
-    # print(prepared_data)
-    prepared_data = cv_moveAverage_value(3, prepared_data)  # N_day 평균 병화량
-    prepared_data = cv_moveAverage_rate(3, prepared_data)
-    prepared_data = set_udNd(3, prepared_data)
-    prepared_data = cvNd_diff_rate(3, prepared_data)
-
-    # 날짜 내림차순으로 재 정렬
-    prepared_data = prepared_data.sort_values(["basic_date"], ascending=[False])
-    result_data = prepared_data.reset_index(drop=True)
-
-    result_data.to_csv("stock_history_added.csv", mode='w', encoding='cp949')
-'''
