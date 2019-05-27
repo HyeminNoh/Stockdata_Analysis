@@ -48,5 +48,5 @@
    
 --------------------
 ### 실행 결과 - 산점도 확인 plot
-![실제 udNd]('udnd.png')
-![예측 udNd]('predicted_udnd.png')
+![actual udNd](udnd.png)
+![predicted udNd](predicted_udnd.png)
