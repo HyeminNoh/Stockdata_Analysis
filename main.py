@@ -98,5 +98,3 @@ if __name__ == '__main__':
 
     # test데이터의 기존 udNd 분포도, 예측 udNd 분포도
     knn.plot_udNd(knn.classify_data(prepared_data)[0], predict_data)
-
-    knn.classify_and_plot_grid(max_k,prepared_data)
